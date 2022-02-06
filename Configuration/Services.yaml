@@ -1,0 +1,28 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  Ayacoo\Xliff\:
+    resource: '../Classes/*'
+    exclude: '../Classes/Service/SimpleXMLElementExtended*'
+
+  Ayacoo\Xliff\Command\MigrationCommand:
+    tags:
+      - name: 'console.command'
+        command: 'xliff:migrate'
+        description: 'Migrate XLIFF files from version 1.0 to version 1.2'
+        schedulable: false
+  Ayacoo\Xliff\Command\GenerateCommand:
+    tags:
+      - name: 'console.command'
+        command: 'xliff:generate'
+        description: 'Generate and translate XLIFF files for defined languages'
+        schedulable: false
+  Ayacoo\Xliff\Command\ExportCommand:
+    tags:
+      - name: 'console.command'
+        command: 'xliff:export'
+        description: 'Export xliff file content into csv'
+        schedulable: false

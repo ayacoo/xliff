@@ -1,0 +1,29 @@
+{
+	"type": "typo3-cms-extension",
+	"name": "ayacoo/xliff",
+	"description": "TYPO3 XLIFF Migration",
+	"license": "MIT",
+	"version": "1.0.0",
+	"homepage": "https://www.ayacoo.de",
+	"authors": [
+		{
+			"name": "Guido Schmechel",
+			"role": "Developer"
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"Ayacoo\\Xliff\\": "Classes/"
+		}
+	},
+	"require": {
+		"ext-simplexml": "*",
+		"ext-dom": "*",
+		"ext-libxml": "*"
+	},
+	"extra": {
+		"typo3/cms": {
+			"extension-key": "xliff"
+		}
+	}
+}

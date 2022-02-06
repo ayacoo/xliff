@@ -1,0 +1,117 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Ayacoo\Xliff\Command;
+
+use Ayacoo\Xliff\Service\XliffService;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Finder\Finder;
+use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
+class MigrationCommand extends Command
+{
+    private XliffService $xliffService;
+
+    protected function configure(): void
+    {
+        $this->setDescription('Migrate xliff files for a extension');
+        $this->addOption(
+            'extension',
+            null,
+            InputOption::VALUE_REQUIRED,
+            'Name of your extension',
+            ''
+        );
+        $this->addOption(
+            'overwrite',
+            null,
+            InputOption::VALUE_OPTIONAL,
+            'Overwrites the old XLIFF file',
+            true
+        );
+        $this->addOption(
+            'empty',
+            null,
+            InputOption::VALUE_OPTIONAL,
+            'Allow handling of empty XLIFF files',
+            false
+        );
+    }
+
+    /**
+     * @param XliffService $xliffService
+     */
+    public function __construct(XliffService $xliffService)
+    {
+        parent::__construct();
+        $this->xliffService = $xliffService;
+    }
+
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int
+     * @throws \JsonException
+     */
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
+        $io = new SymfonyStyle($input, $output);
+        $extensionName = $input->getOption('extension');
+        $overwrite = (bool)$input->getOption('overwrite');
+        $allowEmptyFile = (bool)$input->getOption('empty');
+
+        $path = Environment::getExtensionsPath() . '/' . $extensionName . '/Resources/Private/Language';
+        $finder = new Finder();
+        $finder->files()->in($path);
+        if ($finder->hasResults()) {
+            foreach ($finder as $file) {
+                $absoluteFilePath = $file->getRealPath();
+                $fileNameWithExtension = $file->getRelativePathname();
+
+                $locallang = simplexml_load_string(file_get_contents($absoluteFilePath));
+                $fileAttributes = (array)$locallang->file->attributes();
+                $targetLanguage = $fileAttributes['target-language'] ?? '';
+
+                $targetFileName = $path . '/' . $fileNameWithExtension;
+                [$xmlDocument, $bodyTag] = $this->xliffService->buildXliffStructure(
+                    $targetLanguage,
+                    $extensionName,
+                    $fileNameWithExtension
+                );
+
+                $items = (array)$locallang->file->body;
+                foreach (array_shift($items) ?? [] as $item) {
+                    $transUnitTag = $bodyTag->addChild('trans-unit');
+                    $transUnitTag->addAttribute('id', (string)$item->attributes()->id);
+                    $transUnitTag->addAttribute('resname', (string)$item->attributes()->resname);
+
+                    $this->xliffService->addChild($item, $transUnitTag, $io);
+                    $this->xliffService->addChild($item, $transUnitTag, $io, 'target');
+                }
+
+                $dom = dom_import_simplexml($xmlDocument)->ownerDocument;
+                $dom->formatOutput = true;
+                if ($allowEmptyFile || (!$allowEmptyFile && $bodyTag->count() > 0)) {
+                    if (!$overwrite) {
+                        $targetFileName .= '.new';
+                    }
+                    GeneralUtility::writeFile($targetFileName, $dom->saveXML());
+                    $io->success('The ' . $targetFileName . ' file was migrated to XLIFF version 1.2');
+                } else {
+                    $io->warning('The ' . $targetFileName . ' file was not migrated.
+                        No XML children were found or there are comments in the original XLIFF file.');
+                }
+            }
+        } else {
+            $io->warning('No XLIFF files were found in this extension');
+        }
+
+        return Command::SUCCESS;
+    }
+}
