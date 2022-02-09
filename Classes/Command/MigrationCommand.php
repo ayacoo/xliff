@@ -89,7 +89,7 @@ class MigrationCommand extends Command
             $searchFolder .= '/' . $path;
         }
         $finder = new Finder();
-        $finder->files()->in($path)->name($pattern);
+        $finder->files()->in($searchFolder)->name($pattern);
         if ($finder->hasResults()) {
             foreach ($finder as $file) {
                 $absoluteFilePath = $file->getRealPath();
@@ -99,7 +99,7 @@ class MigrationCommand extends Command
                 $fileAttributes = (array)$locallang->file->attributes();
                 $targetLanguage = $fileAttributes['@attributes']['target-language'] ?? '';
 
-                $targetFileName = $path . '/' . $fileNameWithExtension;
+                $targetFileName = $searchFolder . '/' . $fileNameWithExtension;
                 [$xmlDocument, $bodyTag] = $this->xliffService->buildXliffStructure(
                     $targetLanguage,
                     $extensionName,
