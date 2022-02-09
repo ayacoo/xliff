@@ -66,9 +66,10 @@ class MigrationCommand extends Command
         $overwrite = (bool)$input->getOption('overwrite');
         $allowEmptyFile = (bool)$input->getOption('empty');
 
+		$pattern = '*.xlf';
         $path = Environment::getExtensionsPath() . '/' . $extensionName . '/Resources/Private/Language';
         $finder = new Finder();
-        $finder->files()->in($path);
+        $finder->files()->in($path)->name($pattern);
         if ($finder->hasResults()) {
             foreach ($finder as $file) {
                 $absoluteFilePath = $file->getRealPath();

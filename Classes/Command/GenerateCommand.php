@@ -69,7 +69,7 @@ class GenerateCommand extends Command
 
         $path = Environment::getExtensionsPath() . '/' . $extensionName . '/Resources/Private/Language';
         $finder = new Finder();
-        $finder->files()->in($path);
+        $finder->files()->in($path)->name($pattern);
 
         if ($finder->hasResults()) {
             foreach ($finder as $file) {
