@@ -67,6 +67,7 @@ class GenerateCommand extends Command
         $targetLanguages = Generalutility::trimExplode(',', $input->getOption('languages'));
         $autoTranslate = (bool)$input->getOption('translate');
 
+        $pattern = '*.xlf';
         $path = Environment::getExtensionsPath() . '/' . $extensionName . '/Resources/Private/Language';
         $finder = new Finder();
         $finder->files()->in($path)->name($pattern);
@@ -78,35 +79,41 @@ class GenerateCommand extends Command
                 foreach ($targetLanguages as $targetLanguage) {
                     $targetFileName = $path . '/' . $targetLanguage . '.' . $fileNameWithExtension;
 
-                    [$xmlDocument, $bodyTag] = $this->xliffService->buildXliffStructure(
-                        $targetLanguage,
-                        $extensionName,
-                        $fileNameWithExtension
-                    );
-
                     $originalXliffContent = simplexml_load_string(file_get_contents($absoluteFilePath));
-                    $items = (array)$originalXliffContent->file->body;
-                    $transUnitItems = array_shift($items);
-                    foreach ($transUnitItems ?? [] as $item) {
-                        $id = (string)$item->attributes()->id;
-                        $resName = (string)$item->attributes()->resname;
+                    $fileAttributes = (array)$originalXliffContent->file->attributes();
+                    $originalTargetLanguage = $fileAttributes['@attributes']['target-language'] ?? '';
 
-                        $transUnitTag = $bodyTag->addChild('trans-unit');
-                        $transUnitTag->addAttribute('id', $id);
-                        $transUnitTag->addAttribute('resname', $resName ?: $id);
-
-                        $this->xliffService->addChild(
-                            $item,
-                            $transUnitTag,
-                            $io,
-                            'source',
+                    // just generate language variants for original language xliff file
+                    if (empty($originalTargetLanguage)) {
+                        [$xmlDocument, $bodyTag] = $this->xliffService->buildXliffStructure(
                             $targetLanguage,
-                            $autoTranslate
+                            $extensionName,
+                            $fileNameWithExtension
                         );
-                    }
 
-                    $this->xliffService->saveFile($xmlDocument, $targetFileName);
-                    $io->success('The file ' . $targetFileName . ' was generated');
+                        $items = (array)$originalXliffContent->file->body;
+                        $transUnitItems = array_shift($items);
+                        foreach ($transUnitItems ?? [] as $item) {
+                            $id = (string)$item->attributes()->id;
+                            $resName = (string)$item->attributes()->resname;
+
+                            $transUnitTag = $bodyTag->addChild('trans-unit');
+                            $transUnitTag->addAttribute('id', $id);
+                            $transUnitTag->addAttribute('resname', $resName ?: $id);
+
+                            $this->xliffService->addChild(
+                                $item,
+                                $transUnitTag,
+                                $io,
+                                'source',
+                                $targetLanguage,
+                                $autoTranslate
+                            );
+                        }
+
+                        $this->xliffService->saveFile($xmlDocument, $targetFileName);
+                        $io->success('The file ' . $targetFileName . ' was generated');
+                    }
                 }
             }
         } else {
