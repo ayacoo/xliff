@@ -77,6 +77,7 @@ class XliffService
                 $valueString = ((string)$item->$type);
             }
 
+            $valueString = html_entity_decode($valueString, ENT_QUOTES, 'utf-8');
             $valueString = htmlspecialchars($valueString, ENT_QUOTES, 'utf-8');
             if (count($value) > 0) {
                 $transUnitTag->addChild($type, $valueString);

@@ -43,19 +43,19 @@ class MigrationCommand extends Command
             false
         );
         $this->addOption(
-            'empty',
-            null,
-            InputOption::VALUE_OPTIONAL,
-            'Allow handling of empty XLIFF files',
-            false
-        );
-        $this->addOption(
             'file',
             null,
             InputOption::VALUE_REQUIRED,
             'Name of your file',
             ''
-        );		
+        );
+        $this->addOption(
+            'path',
+            null,
+            InputOption::VALUE_REQUIRED,
+            'Path of your file',
+            ''
+        );
     }
 
     /**
@@ -80,7 +80,7 @@ class MigrationCommand extends Command
         $overwrite = (bool)$input->getOption('overwrite');
         $allowEmptyFile = (bool)$input->getOption('empty');
         $file = $input->getOption('file') ?? '';
-        $path = $input->getOption('path') ?? '';		
+        $path = $input->getOption('path') ?? '';
 
         $pattern = '*.xlf';
         $searchFolder = Environment::getExtensionsPath() . '/' . $extensionName . '/Resources/Private/Language';
