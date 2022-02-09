@@ -88,9 +88,13 @@ class GenerateCommand extends Command
                     $items = (array)$originalXliffContent->file->body;
                     $transUnitItems = array_shift($items);
                     foreach ($transUnitItems ?? [] as $item) {
+                        $id = (string)$item->attributes()->id;
+                        $resName = (string)$item->attributes()->resname;
+
                         $transUnitTag = $bodyTag->addChild('trans-unit');
-                        $transUnitTag->addAttribute('id', (string)$item->attributes()->id);
-                        $transUnitTag->addAttribute('resname', (string)$item->attributes()->resname);
+                        $transUnitTag->addAttribute('id', $id);
+                        $transUnitTag->addAttribute('resname', $resName ?: $id);
+
                         $this->xliffService->addChild(
                             $item,
                             $transUnitTag,
