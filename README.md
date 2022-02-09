@@ -34,13 +34,15 @@ header is rebuilt and the trans-unit elements are used from the original file.
 #### Migrate XLIFF 1.0 to 1.2
 
 ```
-vendor/bin/typo3cms xliff:migrate --extension=EXTENSION_NAME --overwrite=(1|0) --empty=(1|0)
+vendor/bin/typo3cms xliff:migrate --extension=EXTENSION_NAME --overwrite=(1|0) --empty=(1|0) --path=SUBFOLDER --file==FILENAME
 ```
 
 All XLIFF files will be migrated from version 1.0 to 1.2. If you want, you can also disable the overwriting of the file
 and a copy of the original file will be created.
 
-The empty attribute can also be used to migrate empty XLIFF files.
+The ```empty``` attribute can also be used to migrate empty XLIFF files.
+
+If you want to customize a single file, use the ```file``` attribute. If this file is in a subfolder, add the ```path``` attribute.
 
 #### Generate and/or translate XLIFF files for defined languages
 
@@ -49,12 +51,12 @@ purpose you can specify a comma-separated list of isocodes in the ```languages``
 in version 1.2 is also directly created.
 
 Then target elements are automatically added with the text from the source of the original. CDATA is also taken into
-account.
+account. All XLF files that do not have a target-language attribute are migrated.
 
 If you use the parameter translate with ```true```, you can also have these texts automatically translated from the
 original. For this [deepl][3] is used. For this an API account incl. key must exist.
 
-It is unclear here if there are any limitations on the part of the API of deepl. In case of doubt it is better to
+It is unclear here if there are any limitations on the part of the API of deepl. In case of doubt it is maybe better to
 translate file by file.
 
 ```
@@ -69,10 +71,14 @@ Translation agencies sometimes require a different file format. For this reason 
 vendor/bin/typo3cms xliff:export --extension=EXTENSION_NAME --file=FILENAME
 ```
 
+Hint: Subfolders are specified here directly with in the file attribute.
+
 ## 2.3 Current/known problems
 
 - Files with a comment ``<!-- comment -->`` are not yet processed cleanly
 - XLF files that have only one trans-unit element are not yet processed
+
+Please have also a look at https://github.com/ayacoo/xliff/issues
 
 ## 3 Documentation
 

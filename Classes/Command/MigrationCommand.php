@@ -42,6 +42,20 @@ class MigrationCommand extends Command
             'Allow handling of empty XLIFF files',
             false
         );
+        $this->addOption(
+            'empty',
+            null,
+            InputOption::VALUE_OPTIONAL,
+            'Allow handling of empty XLIFF files',
+            false
+        );
+        $this->addOption(
+            'file',
+            null,
+            InputOption::VALUE_REQUIRED,
+            'Name of your file',
+            ''
+        );		
     }
 
     /**
@@ -65,9 +79,15 @@ class MigrationCommand extends Command
         $extensionName = $input->getOption('extension');
         $overwrite = (bool)$input->getOption('overwrite');
         $allowEmptyFile = (bool)$input->getOption('empty');
+        $file = $input->getOption('file') ?? '';
+        $path = $input->getOption('path') ?? '';		
 
-		$pattern = '*.xlf';
-        $path = Environment::getExtensionsPath() . '/' . $extensionName . '/Resources/Private/Language';
+        $pattern = '*.xlf';
+        $searchFolder = Environment::getExtensionsPath() . '/' . $extensionName . '/Resources/Private/Language';
+        if (!empty($file)) {
+            $pattern = $file;
+            $searchFolder .= '/' . $path;
+        }
         $finder = new Finder();
         $finder->files()->in($path)->name($pattern);
         if ($finder->hasResults()) {
