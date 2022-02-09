@@ -76,7 +76,7 @@ class MigrationCommand extends Command
 
                 $locallang = simplexml_load_string(file_get_contents($absoluteFilePath));
                 $fileAttributes = (array)$locallang->file->attributes();
-                $targetLanguage = $fileAttributes['target-language'] ?? '';
+                $targetLanguage = $fileAttributes['@attributes']['target-language'] ?? '';
 
                 $targetFileName = $path . '/' . $fileNameWithExtension;
                 [$xmlDocument, $bodyTag] = $this->xliffService->buildXliffStructure(
