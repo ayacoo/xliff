@@ -85,11 +85,15 @@ class GenerateCommand extends Command
 
                     // just generate language variants for original language xliff file
                     if (empty($originalTargetLanguage)) {
-                        [$xmlDocument, $bodyTag] = $this->xliffService->buildXliffStructure(
+                        $xmlDocument = $this->xliffService->buildXliffStructure();
+                        $fileTag = $this->xliffService->buildXliffFile(
+                            $xmlDocument,
                             $targetLanguage,
                             $extensionName,
                             $fileNameWithExtension
                         );
+                        $this->xliffService->buildXliffHeader($fileTag, $originalXliffContent);
+                        $bodyTag = $this->xliffService->buildXliffBody($fileTag);
 
                         $items = (array)$originalXliffContent->file->body;
                         $transUnitItems = array_shift($items);

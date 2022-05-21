@@ -100,11 +100,17 @@ class MigrationCommand extends Command
                 $targetLanguage = $fileAttributes['@attributes']['target-language'] ?? '';
 
                 $targetFileName = $searchFolder . '/' . $fileNameWithExtension;
-                [$xmlDocument, $bodyTag] = $this->xliffService->buildXliffStructure(
+
+                $xmlDocument = $this->xliffService->buildXliffStructure();
+                $fileTag = $this->xliffService->buildXliffFile(
+                    $xmlDocument,
                     $targetLanguage,
                     $extensionName,
                     $fileNameWithExtension
                 );
+                $this->xliffService->buildXliffHeader($fileTag, $locallang);
+                $bodyTag = $this->xliffService->buildXliffBody($fileTag);
+
 
                 $items = (array)$locallang->file->body;
                 foreach (array_shift($items) ?? [] as $item) {

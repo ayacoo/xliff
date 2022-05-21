@@ -21,16 +21,31 @@ class XliffService
     }
 
     /**
-     * @param string $targetLanguage
-     * @param $extension
-     * @param string $targetFileName
-     * @return array
+     * @return SimpleXMLElementExtended
      */
-    public function buildXliffStructure(string $targetLanguage, $extension, string $targetFileName): array
+    public function buildXliffStructure(): SimpleXMLElementExtended
     {
         $xmlDocument = new SimpleXMLElementExtended('<?xml version="1.0" encoding="utf-8" standalone="yes" ?><xliff />');
         $xmlDocument->addAttribute('version', '1.2');
         $xmlDocument->addAttribute('xmlns', 'urn:oasis:names:tc:xliff:document:1.2');
+
+        return $xmlDocument;
+    }
+
+    /**
+     * @param SimpleXMLElementExtended $xmlDocument
+     * @param string $targetLanguage
+     * @param string $extension
+     * @param string $targetFileName
+     * @return SimpleXMLElementExtended
+     */
+    public function buildXliffFile(
+        SimpleXMLElementExtended $xmlDocument,
+        string $targetLanguage,
+        string $extension,
+        string $targetFileName
+    ): SimpleXMLElementExtended
+    {
         $fileTag = $xmlDocument->addChild('file');
         $fileTag->addAttribute('source-language', 'en');
         if (!empty($targetLanguage)) {
@@ -43,11 +58,39 @@ class XliffService
             'EXT:' . $extension . '/Resources/Private/Language/' . $targetFileName
         );
         $fileTag->addAttribute('product-name', $extension);
-        $fileTag->addChild('header');
-        $bodyTag = $fileTag->addChild('body');
 
-        return [$xmlDocument, $bodyTag];
+        return $fileTag;
     }
+
+    /**
+     * @param SimpleXMLElementExtended $fileTag
+     * @param SimpleXMLElement $xliffContent
+     * @return SimpleXMLElementExtended
+     */
+    public function buildXliffHeader(
+        SimpleXMLElementExtended $fileTag,
+        SimpleXMLElement $xliffContent
+    ): SimpleXMLElementExtended
+    {
+        $headerTag = $fileTag->addChild('header');
+
+        $items = (array)$xliffContent->file->header;
+        foreach ($items ?? [] as $key => $value) {
+            $headerTag->addChild($key, $value);
+        }
+
+        return $headerTag;
+    }
+
+    /**
+     * @param SimpleXMLElementExtended $fileTag
+     * @return SimpleXMLElementExtended
+     */
+    public function buildXliffBody(SimpleXMLElementExtended $fileTag): SimpleXMLElementExtended
+    {
+        return $fileTag->addChild('body');
+    }
+
 
     /**
      * @param SimpleXMLElement $item
