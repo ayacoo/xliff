@@ -179,11 +179,15 @@ class XliffService
     public function getTransUnitElements(SimpleXMLElement $originalXliffContent): array
     {
         $items = (array)$originalXliffContent->file->body;
+        if (array_key_exists('comment', $items)) {
+            unset($items['comment']);
+        }
         if (is_array($items['trans-unit'])) {
-            $transUnitItems = array_shift($items);
+            $transUnitItems = $items['trans-unit'];
         } else {
             $transUnitItems = $items;
         }
+
         return $transUnitItems;
     }
 }
