@@ -1,3 +1,5 @@
+# cat=Settings/O; type=string; label= Choose your translation service (deepl)
+translationService = deepl
 # cat=Settings/O; type=string; label= Deepl API Key
 deeplApiKey =
 # cat=Settings/O; type=string; label= Deepl API Url: Please note that with Deepl Free, the API host is https://api-free.deepl.com. This free DeepL API Key includes 500.000 words per month.You can register for new Deepl Free API here = https://www.deepl.com/pro-checkout/account?productId=1200&yearly=false&trial=false

@@ -3,21 +3,23 @@ declare(strict_types=1);
 
 namespace Ayacoo\Xliff\Service;
 
+use Ayacoo\Xliff\Service\Translation\AbstractTranslationInterface;
+use Ayacoo\Xliff\Service\Translation\DeeplService;
 use SimpleXMLElement;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class XliffService
 {
-    private ?DeeplService $deeplService;
+    private ?AbstractTranslationInterface $translationService = null;
 
-    /**
-     * @param DeeplService $deeplService
-     */
-    public function __construct(DeeplService $deeplService)
+    public function __construct(ExtensionConfiguration $extensionConfiguration)
     {
-
-        $this->deeplService = $deeplService;
+        $extConf = $extensionConfiguration->get('xliff') ?? [];
+        if ($extConf['translationService'] === 'deepl') {
+            $this->translationService = GeneralUtility::makeInstance(DeeplService::class);
+        }
     }
 
     /**
@@ -130,10 +132,15 @@ class XliffService
 
             if ($type === 'source' && !empty($targetLanguage)) {
                 if ($autoTranslate) {
-                    $result = $this->deeplService->translateRequest($valueString, strtoupper($targetLanguage), 'EN');
-                    if (!empty($result['translations'][0]['text'])) {
-                        $translation = $result['translations'][0]['text'];
-                        $io->info('deepl Translation found: ' . $valueString . ' -> ' . $translation);
+                    $result = $this->translationService->getTranslation(
+                        $valueString,
+                        strtoupper($targetLanguage),
+                        'EN'
+                    );
+
+                    if (!empty($result['text'])) {
+                        $translation = $result['text'];
+                        $io->info('Translation found: ' . $valueString . ' -> ' . $translation);
                         $valueString = $translation;
                     }
                 }
