@@ -169,4 +169,21 @@ class XliffService
         $dom->formatOutput = true;
         GeneralUtility::writeFile($targetFileName, $dom->saveXML());
     }
+
+    /**
+     * Need for process difference for 1 or n elements
+     *
+     * @param SimpleXMLElement $originalXliffContent
+     * @return array
+     */
+    public function getTransUnitElements(SimpleXMLElement $originalXliffContent): array
+    {
+        $items = (array)$originalXliffContent->file->body;
+        if (is_array($items['trans-unit'])) {
+            $transUnitItems = array_shift($items);
+        } else {
+            $transUnitItems = $items;
+        }
+        return $transUnitItems;
+    }
 }

@@ -112,8 +112,8 @@ class MigrationCommand extends Command
                 $bodyTag = $this->xliffService->buildXliffBody($fileTag);
 
 
-                $items = (array)$locallang->file->body;
-                foreach (array_shift($items) ?? [] as $item) {
+                $transUnitItems = $this->xliffService->getTransUnitElements($locallang);
+                foreach ($transUnitItems ?? [] as $item) {
                     $id = (string)$item->attributes()->id;
                     $resName = (string)$item->attributes()->resname;
 

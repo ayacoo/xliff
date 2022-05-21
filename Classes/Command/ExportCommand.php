@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ayacoo\Xliff\Command;
 
+use Ayacoo\Xliff\Service\XliffService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -15,6 +16,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class ExportCommand extends Command
 {
+    private ?XliffService $xliffService;
+
     protected function configure(): void
     {
         $this->setDescription('Export xliff file content into csv');
@@ -32,6 +35,15 @@ class ExportCommand extends Command
             'Name of your file',
             ''
         );
+    }
+
+    /**
+     * @param XliffService $xliffService
+     */
+    public function __construct(XliffService $xliffService)
+    {
+        parent::__construct();
+        $this->xliffService = $xliffService;
     }
 
     /**
@@ -61,8 +73,7 @@ class ExportCommand extends Command
                 null
                 , LIBXML_NOCDATA
             );
-            $items = (array)$originalXliffContent->file->body;
-            $transUnitItems = array_shift($items);
+            $transUnitItems = $this->xliffService->getTransUnitElements($originalXliffContent);
             foreach ($transUnitItems ?? [] as $item) {
                 $dataRow['id'] = (string)$item->attributes()->id;
                 $dataRow['value'] = (string)$item->source;
