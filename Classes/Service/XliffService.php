@@ -5,6 +5,7 @@ namespace Ayacoo\Xliff\Service;
 
 use Ayacoo\Xliff\Service\Translation\AbstractTranslationInterface;
 use Ayacoo\Xliff\Service\Translation\DeeplService;
+use Ayacoo\Xliff\Service\Translation\GoogleService;
 use SimpleXMLElement;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
@@ -19,6 +20,9 @@ class XliffService
         $extConf = $extensionConfiguration->get('xliff') ?? [];
         if ($extConf['translationService'] === 'deepl') {
             $this->translationService = GeneralUtility::makeInstance(DeeplService::class);
+        }
+        if ($extConf['translationService'] === 'google') {
+            $this->translationService = GeneralUtility::makeInstance(GoogleService::class);
         }
     }
 
@@ -134,7 +138,7 @@ class XliffService
                 if ($autoTranslate) {
                     $result = $this->translationService->getTranslation(
                         $valueString,
-                        strtoupper($targetLanguage),
+                        $targetLanguage,
                         'EN'
                     );
 

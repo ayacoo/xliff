@@ -43,8 +43,9 @@ class DeeplService implements AbstractTranslationInterface
      */
     public function getTranslation(string $content, string $targetLanguage, string $sourceLanguage): array
     {
+        $targetLanguage = strtoupper($targetLanguage);
         // target-language isn't supported
-        if (!in_array(strtoupper($targetLanguage), $this->apiSupportedLanguages, true)) {
+        if (!in_array($targetLanguage, $this->apiSupportedLanguages, true)) {
             return [];
         }
 
@@ -56,7 +57,7 @@ class DeeplService implements AbstractTranslationInterface
             'target_lang' => urlencode($targetLanguage),
             'tag_handling' => urlencode('xml'),
         ];
-        if (!empty($this->extConf['deeplFormality']) && in_array(strtoupper($targetLanguage), $this->formalitySupportedLanguages, true)) {
+        if (!empty($this->extConf['deeplFormality']) && in_array($targetLanguage, $this->formalitySupportedLanguages, true)) {
             $postFields['formality'] = $this->extConf['deeplFormality'];
         }
         //url-ify the data to get content length
