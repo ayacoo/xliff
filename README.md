@@ -5,6 +5,7 @@
 * Migrates XLIFF files from version 1.0 to 1.2
 * Generates XLIFF files in defined languages
 * Generates XLIFF files in defined languages with automatic translation via Deepl
+* Export XLIFF Files in csv or xlsx files
 
 ## 2 Usage
 
@@ -63,7 +64,7 @@ translate file by file.
 vendor/bin/typo3cms xliff:generate --extension=EXTENSION_NAME --languages=ISOCODES --translate=(0|1)
 ```
 
-#### Export locallang.xlf into CSV format
+#### Export xliff file
 
 Translation agencies sometimes require a different file format. For this reason there is also a CSV export.
 
@@ -73,12 +74,11 @@ vendor/bin/typo3cms xliff:export --extension=EXTENSION_NAME --file=FILENAME
 
 Hint: Subfolders are specified here directly with in the file attribute.
 
-## 2.3 Current/known problems
+And if you need to export to Excel format, this is how to do it:
 
-- Files with a comment ``<!-- comment -->`` are not yet processed cleanly
-- XLF files that have only one trans-unit element are not yet processed
-
-Please have also a look at https://github.com/ayacoo/xliff/issues
+```
+vendor/bin/typo3cms xliff:export --extension=EXTENSION_NAME --file=FILENAME --format=xlsx
+```
 
 ## 3 Documentation
 

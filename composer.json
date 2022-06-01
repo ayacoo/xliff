@@ -19,7 +19,8 @@
 	"require": {
 		"ext-simplexml": "*",
 		"ext-dom": "*",
-		"ext-libxml": "*"
+		"ext-libxml": "*",
+		"phpoffice/phpspreadsheet": "^1.23"
 	},
 	"extra": {
 		"typo3/cms": {
