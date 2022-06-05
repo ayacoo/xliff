@@ -67,12 +67,12 @@ vendor/bin/typo3cms xliff:generate --extension=EXTENSION_NAME --languages=ISOCOD
 #### Export xliff file
 
 Translation agencies sometimes require a different file format. For this reason there is also a CSV export.
+You can export any XLF file or you can control exactly one file with the parameters file and path.
 
 ```
-vendor/bin/typo3cms xliff:export --extension=EXTENSION_NAME --file=FILENAME
+vendor/bin/typo3cms xliff:export --extension=EXTENSION_NAME
+vendor/bin/typo3cms xliff:export --extension=EXTENSION_NAME --file=FILENAME --path=PATH
 ```
-
-Hint: Subfolders are specified here directly with in the file attribute.
 
 And if you need to export to Excel format, this is how to do it:
 
