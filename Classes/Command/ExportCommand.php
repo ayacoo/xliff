@@ -51,6 +51,13 @@ class ExportCommand extends Command
             'Export format',
             'csv'
         );
+        $this->addOption(
+            'singleFileExport',
+            null,
+            InputOption::VALUE_OPTIONAL,
+            'Export all xliff files into one single file',
+            true
+        );
     }
 
     /**
@@ -76,6 +83,7 @@ class ExportCommand extends Command
         $file = $input->getOption('file');
         $path = $input->getOption('path') ?? '';
         $format = $input->getOption('format');
+        $singleFileExport = (bool)$input->getOption('singleFileExport');
 
         $searchFolder = Environment::getExtensionsPath() . '/' . $extensionName . '/Resources/Private/Language';
 
@@ -87,6 +95,9 @@ class ExportCommand extends Command
         $finder = new Finder();
         $finder->files()->in($searchFolder)->name($pattern);
         if ($finder->hasResults()) {
+            $exportService = $this->buildExportService($extensionName, $singleFileExport, $format);
+
+            $allTransUnitItems = [];
             foreach ($finder as $file) {
                 $absoluteFilePath = $file->getRealPath();
                 $originalXliffContent = simplexml_load_string(
@@ -94,17 +105,54 @@ class ExportCommand extends Command
                     null
                     , LIBXML_NOCDATA
                 );
-                $transUnitItems = $this->xliffService->getTransUnitElements($originalXliffContent);
-                $exportService = GeneralUtility::makeInstance(CsvExportService::class);
-                if ($format === 'xlsx') {
-                    $exportService = GeneralUtility::makeInstance(XlsxExportService::class);
-                }
-                $exportService->buildExport($transUnitItems, $absoluteFilePath);
+                $fileAttributes = (array)$originalXliffContent->file->attributes();
+                $sourceLanguage = $fileAttributes['@attributes']['source-language'] ?? '';
+                $targetLanguage = $fileAttributes['@attributes']['target-language'] ?? '';
 
-                $io->success('The export file was written');
+                $transUnitItems = $this->xliffService->getTransUnitElements($originalXliffContent);
+
+                $language = $sourceLanguage;
+                $translatedFile = false;
+                if (!empty($targetLanguage)) {
+                    $language = $targetLanguage;
+                    $translatedFile = true;
+                }
+
+                if ($singleFileExport === true) {
+                    foreach ($transUnitItems as $transUnitItem) {
+                        $item = [];
+                        $item['id'] = (string)$transUnitItem->attributes()->id;
+                        $value = (string)$transUnitItem->source;
+                        if ($translatedFile === true) {
+                            $value = (string)$transUnitItem->target;
+                        }
+                        $allTransUnitItems[$item['id']][$language] = $value;
+                    }
+                } else {
+                    $allTransUnitItems[$absoluteFilePath] = $transUnitItems;
+                }
             }
+
+            $exportService->setXliffItems($allTransUnitItems);
+            $exportService->buildExport();
+            $io->success('The export file(s) was written');
         }
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * @param string $extensionName
+     * @param bool $singleFileExport
+     * @param string $format
+     * @return CsvExportService|XlsxExportService|mixed|\Psr\Log\LoggerAwareInterface|\TYPO3\CMS\Core\SingletonInterface
+     */
+    protected function buildExportService(string $extensionName, bool $singleFileExport, string $format): mixed
+    {
+        $exportService = GeneralUtility::makeInstance(CsvExportService::class, $extensionName, $singleFileExport);
+        if ($format === 'xlsx') {
+            $exportService = GeneralUtility::makeInstance(XlsxExportService::class, $extensionName, $singleFileExport);
+        }
+        return $exportService;
     }
 }

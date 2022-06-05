@@ -29,7 +29,7 @@ Attention: This extension should only be active in development mode!
 
 #### Basics
 
-This utility searches for XLF files in the specified extension in Resources/Private/Language. Afterwards the XLIFF
+This utility searches for all extension xlf files in the Resources/Private/Language folder. Afterwards the XLIFF
 header is rebuilt and the trans-unit elements are used from the original file.
 
 #### Migrate XLIFF 1.0 to 1.2
@@ -43,7 +43,8 @@ and a copy of the original file will be created.
 
 The ```empty``` attribute can also be used to migrate empty XLIFF files.
 
-If you want to customize a single file, use the ```file``` attribute. If this file is in a subfolder, add the ```path``` attribute.
+If you want to customize a single file, use the ```file``` attribute. If this file is in a subfolder, add the ```path```
+attribute.
 
 #### Generate and/or translate XLIFF files for defined languages
 
@@ -52,10 +53,10 @@ purpose you can specify a comma-separated list of isocodes in the ```languages``
 in version 1.2 is also directly created.
 
 Then target elements are automatically added with the text from the source of the original. CDATA is also taken into
-account. All XLF files that do not have a target-language attribute are migrated.
+account. All xlf files that do not have a target-language attribute are migrated.
 
 If you use the parameter translate with ```true```, you can also have these texts automatically translated from the
-original. For this [deepl][3] is used. For this an API account incl. key must exist.
+original. For this [deepl][3] or [Google Translate][5] is used. For this an API account incl. key must exist.
 
 It is unclear here if there are any limitations on the part of the API of deepl. In case of doubt it is maybe better to
 translate file by file.
@@ -67,17 +68,24 @@ vendor/bin/typo3cms xliff:generate --extension=EXTENSION_NAME --languages=ISOCOD
 #### Export xliff file
 
 Translation agencies sometimes require a different file format. For this reason there is also a CSV export.
-You can export any XLF file or you can control exactly one file with the parameters file and path.
+You can export any xlf file or you can control exactly one file with the parameters `file` and `path`.
 
 ```
 vendor/bin/typo3cms xliff:export --extension=EXTENSION_NAME
 vendor/bin/typo3cms xliff:export --extension=EXTENSION_NAME --file=FILENAME --path=PATH
 ```
 
-And if you need to export to Excel format, this is how to do it:
+If you need to export to Excel format, this is how to do it:
 
 ```
-vendor/bin/typo3cms xliff:export --extension=EXTENSION_NAME --file=FILENAME --format=xlsx
+vendor/bin/typo3cms xliff:export --extension=EXTENSION_NAME --format=xlsx
+```
+
+By default, an export file is created from all xlf files at the end. If you want to have one generated file per xlf file
+you can use the parameter `singleFileExport`.
+
+```
+vendor/bin/typo3cms xliff:export --extension=EXTENSION_NAME --singleFileExport=(0|1)
 ```
 
 ## 3 Documentation
@@ -99,3 +107,5 @@ And of course thanks deepl for their outstanding service
 [3]: https://www.deepl.com/de/docs-api/translating-text/example/
 
 [4]: https://www.agentur-brandung.de/
+
+[5]: https://cloud.google.com/translate/docs/reference/rest/
