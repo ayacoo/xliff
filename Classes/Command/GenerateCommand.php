@@ -67,7 +67,7 @@ class GenerateCommand extends Command
         $targetLanguages = Generalutility::trimExplode(',', $input->getOption('languages'));
         $autoTranslate = (bool)$input->getOption('translate');
 
-        $pattern = '*.xlf';
+        $pattern = 'locallang*.xlf';
         $path = Environment::getExtensionsPath() . '/' . $extensionName . '/Resources/Private/Language';
         $finder = new Finder();
         $finder->files()->in($path)->name($pattern);
@@ -78,6 +78,24 @@ class GenerateCommand extends Command
                 $fileNameWithExtension = $file->getRelativePathname();
                 foreach ($targetLanguages as $targetLanguage) {
                     $targetFileName = $path . '/' . $targetLanguage . '.' . $fileNameWithExtension;
+
+                    // Check if a translation already exists and use its content, if available.
+                    $translatedTargets = [];
+                    if (file_exists($targetFileName)) {
+                        $targetXliffContent = simplexml_load_string(file_get_contents($targetFileName));
+                        $targetTransUnitItems = $this->xliffService->getTransUnitElements($targetXliffContent);
+                        foreach ($targetTransUnitItems as $targetTransUnitItem) {
+                            $id = (string)$targetTransUnitItem->attributes()->id;
+                            // CDATA Check
+                            $value = (array)$targetTransUnitItem->target;
+                            if (count($value) > 0) {
+                                $valueString = $value[0];
+                            } else {
+                                $valueString = ((string)$targetTransUnitItem->target);
+                            }
+                            $translatedTargets[$id] = $valueString;
+                        }
+                    }
 
                     $originalXliffContent = simplexml_load_string(file_get_contents($absoluteFilePath));
                     $fileAttributes = (array)$originalXliffContent->file->attributes();
@@ -111,7 +129,8 @@ class GenerateCommand extends Command
                                 $io,
                                 'source',
                                 $targetLanguage,
-                                $autoTranslate
+                                $autoTranslate,
+                                $translatedTargets[$id] ?? ''
                             );
                         }
 

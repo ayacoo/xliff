@@ -47,9 +47,9 @@ class XliffService
      */
     public function buildXliffFile(
         SimpleXMLElementExtended $xmlDocument,
-        string $targetLanguage,
-        string $extension,
-        string $targetFileName
+        string                   $targetLanguage,
+        string                   $extension,
+        string                   $targetFileName
     ): SimpleXMLElementExtended
     {
         $fileTag = $xmlDocument->addChild('file');
@@ -75,7 +75,7 @@ class XliffService
      */
     public function buildXliffHeader(
         SimpleXMLElementExtended $fileTag,
-        SimpleXMLElement $xliffContent
+        SimpleXMLElement         $xliffContent
     ): SimpleXMLElementExtended
     {
         $headerTag = $fileTag->addChild('header');
@@ -105,6 +105,7 @@ class XliffService
      * @param string $type
      * @param string $targetLanguage
      * @param bool $autoTranslate
+     * @param string $translatedTarget
      * @return void
      * @throws \JsonException
      */
@@ -114,7 +115,8 @@ class XliffService
         SymfonyStyle             $io,
         string                   $type = 'source',
         string                   $targetLanguage = '',
-        bool                     $autoTranslate = false
+        bool                     $autoTranslate = false,
+        string                   $translatedTarget = ''
     ): void
     {
         if (isset($item->$type)) {
@@ -125,7 +127,6 @@ class XliffService
             } else {
                 $valueString = ((string)$item->$type);
             }
-
             $valueString = html_entity_decode($valueString, ENT_QUOTES, 'utf-8');
             $valueString = htmlspecialchars($valueString, ENT_QUOTES, 'utf-8');
             if (count($value) > 0) {
@@ -135,24 +136,28 @@ class XliffService
             }
 
             if ($type === 'source' && !empty($targetLanguage)) {
-                if ($autoTranslate) {
-                    $result = $this->translationService->getTranslation(
-                        $valueString,
-                        $targetLanguage,
-                        'EN'
-                    );
-
-                    if (!empty($result['text'])) {
-                        $translation = $result['text'];
-                        $io->info('Translation found: ' . $valueString . ' -> ' . $translation);
-                        $valueString = $translation;
-                    }
-                }
-
-                if (count($value) > 0) {
-                    $transUnitTag->addChild('target', $valueString);
+                if (!empty($translatedTarget)) {
+                    $transUnitTag->addChild('target', $translatedTarget);
                 } else {
-                    $transUnitTag->addChildWithCDATA('target', $valueString);
+                    if ($autoTranslate) {
+                        $result = $this->translationService->getTranslation(
+                            $valueString,
+                            $targetLanguage,
+                            'EN'
+                        );
+
+                        if (!empty($result['text'])) {
+                            $translation = $result['text'];
+                            $io->info('Translation found: ' . $valueString . ' -> ' . $translation);
+                            $valueString = $translation;
+                        }
+                    }
+
+                    if (count($value) > 0) {
+                        $transUnitTag->addChild('target', $valueString);
+                    } else {
+                        $transUnitTag->addChildWithCDATA('target', $valueString);
+                    }
                 }
             }
         }
