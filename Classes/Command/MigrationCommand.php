@@ -114,11 +114,13 @@ class MigrationCommand extends Command
 
                 $transUnitItems = $this->xliffService->getTransUnitElements($locallang);
                 foreach ($transUnitItems ?? [] as $item) {
+                    $transUnitTag = $bodyTag->addChild('trans-unit');
+                    foreach ($item->attributes() as $attributeKey => $attributeValue) {
+                        $transUnitTag->addAttribute($attributeKey, (string) $attributeValue);
+                    }
+
                     $id = (string)$item->attributes()->id;
                     $resName = (string)$item->attributes()->resname;
-
-                    $transUnitTag = $bodyTag->addChild('trans-unit');
-                    $transUnitTag->addAttribute('id', $id);
                     $transUnitTag->addAttribute('resname', $resName ?: $id);
 
                     $this->xliffService->addChild($item, $transUnitTag, $io);
