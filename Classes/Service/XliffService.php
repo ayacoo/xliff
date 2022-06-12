@@ -136,7 +136,7 @@ class XliffService
             }
 
             if ($type === 'source' && !empty($targetLanguage)) {
-                if (!empty($translatedTarget)) {
+                if ($translatedTarget !== '') {
                     $transUnitTag->addChild('target', $translatedTarget);
                 } else {
                     if ($autoTranslate) {
