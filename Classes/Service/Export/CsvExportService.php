@@ -19,7 +19,7 @@ class CsvExportService
      * @param string $extensionName
      * @param bool $singleFileExport
      */
-    public function __construct(string $extensionName, bool $singleFileExport)
+    public function __construct(string $extensionName = '', bool $singleFileExport = false)
     {
         $this->extensionName = $extensionName;
         $this->singleFileExport = $singleFileExport;
