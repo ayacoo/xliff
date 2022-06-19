@@ -4,21 +4,18 @@ declare(strict_types=1);
 
 namespace Ayacoo\Xliff\Service\Translation;
 
+use GuzzleHttp\Exception\ClientException;
+use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
-use TYPO3\CMS\Core\Http\Client\ClientException;
 use TYPO3\CMS\Core\Http\RequestFactory;
 
 class DeeplService implements AbstractTranslationInterface
 {
     private ?RequestFactory $requestFactory;
 
-    /**
-     * Default supported languages
-     * @see https://www.deepl.com/de/docs-api/translating-text/#request
-     */
-    protected array $apiSupportedLanguages = ['BG', 'CS', 'DA', 'DE', 'EL', 'EN', 'ES', 'ET', 'FI', 'FR', 'HU', 'ID', 'IT', 'JA', 'LT', 'LV', 'NL', 'PL', 'PT', 'RO', 'RU', 'SK', 'SL', 'SV', 'TR', 'ZH'];
+    protected array $apiSupportedLanguages = [];
 
-    public array $formalitySupportedLanguages = ['DE', 'FR', 'IT', 'ES', 'NL', 'PL', 'PT-PT', 'PT-BR', 'RU'];
+    public array $formalitySupportedLanguages = [];
 
     private array $extConf;
 
@@ -28,10 +25,16 @@ class DeeplService implements AbstractTranslationInterface
      * @throws \TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationExtensionNotConfiguredException
      * @throws \TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationPathDoesNotExistException
      */
-    public function __construct(RequestFactory $requestFactory, ExtensionConfiguration $extensionConfiguration)
+    public function __construct(
+        RequestFactory         $requestFactory,
+        ExtensionConfiguration $extensionConfiguration,
+        CacheManager           $cacheManager
+    )
     {
         $this->requestFactory = $requestFactory;
         $this->extConf = $extensionConfiguration->get('xliff') ?? [];
+        $this->cacheManager = $cacheManager;
+        $this->getSupportedApiLanguages();
     }
 
     /**
@@ -86,5 +89,64 @@ class DeeplService implements AbstractTranslationInterface
         }
 
         return $result ?? [];
+    }
+
+    /**
+     * @return void
+     * @throws \JsonException
+     */
+    protected function getSupportedApiLanguages(): void
+    {
+        $supportedApiLanguagesIdentifier = 'deepl_supportedApiLanguages';
+        $supportedFormalityLanguagesIdentifier = 'deepl_supportedFormalityLanguages';
+
+        $cache = $this->cacheManager->getCache('tx_xliff_cache');
+        $supportedApiLanguagesCache = $cache->get($supportedApiLanguagesIdentifier);
+        $supportedFormalityLanguagesCache = $cache->get($supportedFormalityLanguagesIdentifier);
+
+        if (!$supportedApiLanguagesCache || !$supportedFormalityLanguagesCache) {
+            $postFields = [
+                'auth_key' => $this->extConf['deeplApiKey'],
+                'type' => 'target',
+            ];
+
+            $postFieldString = '';
+            foreach ($postFields as $key => $value) {
+                $postFieldString .= $key . '=' . $value . '&';
+            }
+            rtrim($postFieldString, '&');
+            $contentLength = mb_strlen($postFieldString, '8bit');
+
+            try {
+                $response = $this->requestFactory->request(
+                    $this->extConf['deeplLanguageApiUrl'],
+                    'POST',
+                    [
+                        'form_params' => $postFields,
+                        'headers' => [
+                            'Content-Type' => 'application/x-www-form-urlencoded',
+                            'Content-Length' => $contentLength,
+                        ],
+                    ]
+                );
+
+                $result = json_decode($response->getBody()->getContents(), true, 512, JSON_THROW_ON_ERROR);
+                foreach ($result as $item) {
+                    $this->apiSupportedLanguages[] = $item['language'];
+                    if ($item['supports_formality'] === true) {
+                        $this->formalitySupportedLanguages[] = $item['language'];
+                    }
+                }
+
+                $cacheLifetime = 86400 * 30;
+                $cache->set($supportedApiLanguagesIdentifier, $this->apiSupportedLanguages, [], $cacheLifetime);
+                $cache->set($supportedFormalityLanguagesIdentifier, $this->formalitySupportedLanguages, [], $cacheLifetime);
+            } catch (ClientException $e) {
+
+            }
+        } else {
+            $this->apiSupportedLanguages = $supportedApiLanguagesCache;
+            $this->formalitySupportedLanguages = $supportedFormalityLanguagesCache;
+        }
     }
 }
