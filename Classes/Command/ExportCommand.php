@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Ayacoo\Xliff\Command;
 
+use Ayacoo\Xliff\Event\ModifyExportServiceEvent;
 use Ayacoo\Xliff\Service\Export\AbstractExportServiceInterface;
 use Ayacoo\Xliff\Service\Factory\ExportServiceFactory;
 use Ayacoo\Xliff\Service\XliffService;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -19,6 +21,7 @@ class ExportCommand extends Command
 {
     private ?XliffService $xliffService;
     private ?ExportServiceFactory $exportServiceFactory;
+    private ?EventDispatcherInterface $eventDispatcher;
 
     protected function configure(): void
     {
@@ -62,12 +65,19 @@ class ExportCommand extends Command
 
     /**
      * @param XliffService $xliffService
+     * @param ExportServiceFactory $exportServiceFactory
+     * @param EventDispatcherInterface|null $eventDispatcher
      */
-    public function __construct(XliffService $xliffService, ExportServiceFactory $exportServiceFactory)
+    public function __construct(
+        XliffService             $xliffService,
+        ExportServiceFactory     $exportServiceFactory,
+        EventDispatcherInterface $eventDispatcher = null,
+    )
     {
         parent::__construct();
         $this->xliffService = $xliffService;
         $this->exportServiceFactory = $exportServiceFactory;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     /**
@@ -162,6 +172,9 @@ class ExportCommand extends Command
                 break;
         }
 
-        return $exportService;
+        $modifyExportServiceEvent = $this->eventDispatcher->dispatch(
+            new ModifyExportServiceEvent($exportService)
+        );
+        return $modifyExportServiceEvent->getExportService();
     }
 }
