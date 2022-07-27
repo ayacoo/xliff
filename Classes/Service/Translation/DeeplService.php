@@ -11,19 +11,21 @@ use TYPO3\CMS\Core\Http\RequestFactory;
 
 class DeeplService implements AbstractTranslationInterface
 {
+    private const CACHE_LIFETIME = 86400 * 30;
     private ?RequestFactory $requestFactory;
-
-    protected array $apiSupportedLanguages = [];
-
+    public array $apiSupportedLanguages = [];
     public array $formalitySupportedLanguages = [];
-
     private array $extConf;
+    private ?CacheManager $cacheManager;
 
     /**
      * @param RequestFactory $requestFactory
      * @param ExtensionConfiguration $extensionConfiguration
+     * @param CacheManager $cacheManager
      * @throws \TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationExtensionNotConfiguredException
      * @throws \TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationPathDoesNotExistException
+     * @throws \JsonException
+     * @throws \TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException
      */
     public function __construct(
         RequestFactory         $requestFactory,
@@ -34,7 +36,33 @@ class DeeplService implements AbstractTranslationInterface
         $this->requestFactory = $requestFactory;
         $this->extConf = $extensionConfiguration->get('xliff') ?? [];
         $this->cacheManager = $cacheManager;
-        $this->getSupportedApiLanguages();
+        $this->getSupportedLanguagesFromCache();
+    }
+
+    public function getApiSupportedLanguages(): array
+    {
+        return $this->apiSupportedLanguages;
+    }
+
+    public function getFormalitySupportedLanguages(): array
+    {
+        return $this->formalitySupportedLanguages;
+    }
+
+    /**
+     * @param array $apiSupportedLanguages
+     */
+    public function setApiSupportedLanguages(array $apiSupportedLanguages): void
+    {
+        $this->apiSupportedLanguages = $apiSupportedLanguages;
+    }
+
+    /**
+     * @param array $formalitySupportedLanguages
+     */
+    public function setFormalitySupportedLanguages(array $formalitySupportedLanguages): void
+    {
+        $this->formalitySupportedLanguages = $formalitySupportedLanguages;
     }
 
     /**
@@ -47,8 +75,7 @@ class DeeplService implements AbstractTranslationInterface
     public function getTranslation(string $content, string $targetLanguage, string $sourceLanguage): array
     {
         $targetLanguage = strtoupper($targetLanguage);
-        // target-language isn't supported
-        if (!in_array($targetLanguage, $this->apiSupportedLanguages, true)) {
+        if (!in_array($targetLanguage, $this->getApiSupportedLanguages(), true)) {
             return [];
         }
 
@@ -60,10 +87,9 @@ class DeeplService implements AbstractTranslationInterface
             'target_lang' => urlencode($targetLanguage),
             'tag_handling' => urlencode('xml'),
         ];
-        if (!empty($this->extConf['deeplFormality']) && in_array($targetLanguage, $this->formalitySupportedLanguages, true)) {
+        if (!empty($this->extConf['deeplFormality']) && in_array($targetLanguage, $this->getFormalitySupportedLanguages(), true)) {
             $postFields['formality'] = $this->extConf['deeplFormality'];
         }
-        //url-ify the data to get content length
         foreach ($postFields as $key => $value) {
             $postFieldString .= $key . '=' . $value . '&';
         }
@@ -91,11 +117,51 @@ class DeeplService implements AbstractTranslationInterface
         return $result ?? [];
     }
 
+    public function fetchDeeplLanguages(): void
+    {
+        $postFields = [
+            'auth_key' => $this->extConf['deeplApiKey'],
+            'type' => 'target',
+        ];
+
+        $postFieldString = '';
+        foreach ($postFields as $key => $value) {
+            $postFieldString .= $key . '=' . $value . '&';
+        }
+        rtrim($postFieldString, '&');
+        $contentLength = mb_strlen($postFieldString, '8bit');
+
+        try {
+            $response = $this->requestFactory->request(
+                $this->extConf['deeplLanguageApiUrl'],
+                'POST',
+                [
+                    'form_params' => $postFields,
+                    'headers' => [
+                        'Content-Type' => 'application/x-www-form-urlencoded',
+                        'Content-Length' => $contentLength,
+                    ],
+                ]
+            );
+
+            $result = json_decode($response->getBody()->getContents(), true, 512, JSON_THROW_ON_ERROR);
+            foreach ($result as $item) {
+                $this->apiSupportedLanguages[] = $item['language'];
+                if ($item['supports_formality'] === true) {
+                    $this->formalitySupportedLanguages[] = $item['language'];
+                }
+            }
+        } catch (ClientException $e) {
+
+        }
+    }
+
     /**
      * @return void
      * @throws \JsonException
+     * @throws \TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException
      */
-    protected function getSupportedApiLanguages(): void
+    protected function getSupportedLanguagesFromCache(): void
     {
         $supportedApiLanguagesIdentifier = 'deepl_supportedApiLanguages';
         $supportedFormalityLanguagesIdentifier = 'deepl_supportedFormalityLanguages';
@@ -105,48 +171,12 @@ class DeeplService implements AbstractTranslationInterface
         $supportedFormalityLanguagesCache = $cache->get($supportedFormalityLanguagesIdentifier);
 
         if (!$supportedApiLanguagesCache || !$supportedFormalityLanguagesCache) {
-            $postFields = [
-                'auth_key' => $this->extConf['deeplApiKey'],
-                'type' => 'target',
-            ];
-
-            $postFieldString = '';
-            foreach ($postFields as $key => $value) {
-                $postFieldString .= $key . '=' . $value . '&';
-            }
-            rtrim($postFieldString, '&');
-            $contentLength = mb_strlen($postFieldString, '8bit');
-
-            try {
-                $response = $this->requestFactory->request(
-                    $this->extConf['deeplLanguageApiUrl'],
-                    'POST',
-                    [
-                        'form_params' => $postFields,
-                        'headers' => [
-                            'Content-Type' => 'application/x-www-form-urlencoded',
-                            'Content-Length' => $contentLength,
-                        ],
-                    ]
-                );
-
-                $result = json_decode($response->getBody()->getContents(), true, 512, JSON_THROW_ON_ERROR);
-                foreach ($result as $item) {
-                    $this->apiSupportedLanguages[] = $item['language'];
-                    if ($item['supports_formality'] === true) {
-                        $this->formalitySupportedLanguages[] = $item['language'];
-                    }
-                }
-
-                $cacheLifetime = 86400 * 30;
-                $cache->set($supportedApiLanguagesIdentifier, $this->apiSupportedLanguages, [], $cacheLifetime);
-                $cache->set($supportedFormalityLanguagesIdentifier, $this->formalitySupportedLanguages, [], $cacheLifetime);
-            } catch (ClientException $e) {
-
-            }
-        } else {
-            $this->apiSupportedLanguages = $supportedApiLanguagesCache;
-            $this->formalitySupportedLanguages = $supportedFormalityLanguagesCache;
+            $this->fetchDeeplLanguages();
+            $cache->set($supportedApiLanguagesIdentifier, $this->apiSupportedLanguages, [], self::CACHE_LIFETIME);
+            $cache->set($supportedFormalityLanguagesIdentifier, $this->formalitySupportedLanguages, [], self::CACHE_LIFETIME);
         }
+
+        $this->setApiSupportedLanguages($supportedApiLanguagesCache);
+        $this->setFormalitySupportedLanguages($supportedFormalityLanguagesCache);
     }
 }
