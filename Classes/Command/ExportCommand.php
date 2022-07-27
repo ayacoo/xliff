@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Ayacoo\Xliff\Command;
 
-use Ayacoo\Xliff\Service\Export\CsvExportService;
-use Ayacoo\Xliff\Service\Export\XlsxExportService;
+use Ayacoo\Xliff\Service\Export\AbstractExportServiceInterface;
+use Ayacoo\Xliff\Service\Factory\ExportServiceFactory;
 use Ayacoo\Xliff\Service\XliffService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -14,11 +14,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Finder\Finder;
 use TYPO3\CMS\Core\Core\Environment;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class ExportCommand extends Command
 {
     private ?XliffService $xliffService;
+    private ?ExportServiceFactory $exportServiceFactory;
 
     protected function configure(): void
     {
@@ -63,10 +63,11 @@ class ExportCommand extends Command
     /**
      * @param XliffService $xliffService
      */
-    public function __construct(XliffService $xliffService)
+    public function __construct(XliffService $xliffService, ExportServiceFactory $exportServiceFactory)
     {
         parent::__construct();
         $this->xliffService = $xliffService;
+        $this->exportServiceFactory = $exportServiceFactory;
     }
 
     /**
@@ -134,7 +135,7 @@ class ExportCommand extends Command
             }
 
             $exportService->setXliffItems($allTransUnitItems);
-            $exportService->buildExport();
+            $exportService->save();
             $io->success('The export file(s) was written');
         }
 
@@ -145,14 +146,22 @@ class ExportCommand extends Command
      * @param string $extensionName
      * @param bool $singleFileExport
      * @param string $format
-     * @return CsvExportService|XlsxExportService|mixed|\Psr\Log\LoggerAwareInterface|\TYPO3\CMS\Core\SingletonInterface
+     * @return AbstractExportServiceInterface
      */
-    protected function buildExportService(string $extensionName, bool $singleFileExport, string $format): mixed
+    protected function buildExportService(string $extensionName, bool $singleFileExport, string $format): AbstractExportServiceInterface
     {
-        $exportService = GeneralUtility::makeInstance(CsvExportService::class, $extensionName, $singleFileExport);
-        if ($format === 'xlsx') {
-            $exportService = GeneralUtility::makeInstance(XlsxExportService::class, $extensionName, $singleFileExport);
+        $this->exportServiceFactory->setExtensionName($extensionName);
+        $this->exportServiceFactory->setSingleFileExport($singleFileExport);
+
+        switch ($format) {
+            case 'xlsx':
+                $exportService = $this->exportServiceFactory->createXlsxExport();
+                break;
+            default:
+                $exportService = $this->exportServiceFactory->createCsvExport();
+                break;
         }
+
         return $exportService;
     }
 }

@@ -7,7 +7,7 @@ use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Utility\CsvUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-class CsvExportService
+class CsvExportService implements AbstractExportServiceInterface
 {
     protected array $xliffItems = [];
 
@@ -33,7 +33,7 @@ class CsvExportService
         $this->xliffItems = $xliffItems;
     }
 
-    public function buildExport(): void
+    public function save(): void
     {
         if ($this->singleFileExport === true) {
             $this->buildSingleFileExport();

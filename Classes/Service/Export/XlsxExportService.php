@@ -7,7 +7,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use TYPO3\CMS\Core\Core\Environment;
 
-class XlsxExportService
+class XlsxExportService implements AbstractExportServiceInterface
 {
     protected array $xliffItems = [];
 
@@ -33,7 +33,7 @@ class XlsxExportService
         $this->xliffItems = $xliffItems;
     }
 
-    public function buildExport(): void
+    public function save(): void
     {
         if ($this->singleFileExport === true) {
             $this->buildSingleFileExport();
