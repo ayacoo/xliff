@@ -176,7 +176,7 @@ class DeeplService implements AbstractTranslationInterface
             $cache->set($supportedFormalityLanguagesIdentifier, $this->formalitySupportedLanguages, [], self::CACHE_LIFETIME);
         }
 
-        $this->setApiSupportedLanguages($supportedApiLanguagesCache);
-        $this->setFormalitySupportedLanguages($supportedFormalityLanguagesCache);
+        $this->setApiSupportedLanguages($supportedApiLanguagesCache ?? $this->apiSupportedLanguages);
+        $this->setFormalitySupportedLanguages($supportedFormalityLanguagesCache ?? $this->formalitySupportedLanguages);
     }
 }

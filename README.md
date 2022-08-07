@@ -22,6 +22,7 @@ composer require --dev ayacoo/xliff
 ```
 
 Do not forget to activate the extension in the extension manager and define the deepl api settings if necessary/desired.
+And also: Since we use a cache for deepl, a DB Compare is also necessary.
 
 Attention: This extension should only be active in development mode!
 
