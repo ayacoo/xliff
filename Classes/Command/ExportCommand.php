@@ -71,7 +71,7 @@ class ExportCommand extends Command
     public function __construct(
         XliffService             $xliffService,
         ExportServiceFactory     $exportServiceFactory,
-        EventDispatcherInterface $eventDispatcher = null,
+        EventDispatcherInterface $eventDispatcher = null
     )
     {
         parent::__construct();
