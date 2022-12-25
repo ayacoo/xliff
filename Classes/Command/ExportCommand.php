@@ -15,14 +15,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Finder\Finder;
-use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 class ExportCommand extends Command
 {
-    private ?XliffService $xliffService;
-    private ?ExportServiceFactory $exportServiceFactory;
-    private ?EventDispatcherInterface $eventDispatcher;
-
     protected function configure(): void
     {
         $this->setDescription('Export xliff file content into csv');
@@ -63,21 +59,13 @@ class ExportCommand extends Command
         );
     }
 
-    /**
-     * @param XliffService $xliffService
-     * @param ExportServiceFactory $exportServiceFactory
-     * @param EventDispatcherInterface|null $eventDispatcher
-     */
     public function __construct(
-        XliffService             $xliffService,
-        ExportServiceFactory     $exportServiceFactory,
-        EventDispatcherInterface $eventDispatcher = null
+        private readonly ?XliffService             $xliffService = null,
+        private readonly ?ExportServiceFactory     $exportServiceFactory = null,
+        private readonly ?EventDispatcherInterface $eventDispatcher = null
     )
     {
         parent::__construct();
-        $this->xliffService = $xliffService;
-        $this->exportServiceFactory = $exportServiceFactory;
-        $this->eventDispatcher = $eventDispatcher;
     }
 
     /**
@@ -96,7 +84,8 @@ class ExportCommand extends Command
         $format = $input->getOption('format');
         $singleFileExport = (bool)$input->getOption('singleFileExport');
 
-        $searchFolder = Environment::getExtensionsPath() . '/' . $extensionName . '/Resources/Private/Language';
+        $extPath = ExtensionManagementUtility::extPath($extensionName);
+        $searchFolder = $extPath . 'Resources/Private/Language';
 
         $pattern = '*.xlf';
         if (!empty($file)) {
@@ -163,18 +152,14 @@ class ExportCommand extends Command
         $this->exportServiceFactory->setExtensionName($extensionName);
         $this->exportServiceFactory->setSingleFileExport($singleFileExport);
 
-        switch ($format) {
-            case 'xlsx':
-                $exportService = $this->exportServiceFactory->createXlsxExport();
-                break;
-            default:
-                $exportService = $this->exportServiceFactory->createCsvExport();
-                break;
-        }
-
+        $exportService = match ($format) {
+            'xlsx' => $this->exportServiceFactory->createXlsxExport(),
+            default => $this->exportServiceFactory->createCsvExport(),
+        };
         $modifyExportServiceEvent = $this->eventDispatcher->dispatch(
             new ModifyExportServiceEvent($exportService)
         );
+
         return $modifyExportServiceEvent->getExportService();
     }
 }

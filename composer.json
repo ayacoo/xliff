@@ -3,7 +3,7 @@
 	"name": "ayacoo/xliff",
 	"description": "TYPO3 XLIFF Migration",
 	"license": "MIT",
-	"version": "1.0.0",
+	"version": "2.0.0",
 	"homepage": "https://www.ayacoo.de",
 	"authors": [
 		{
@@ -20,7 +20,9 @@
 		"ext-simplexml": "*",
 		"ext-dom": "*",
 		"ext-libxml": "*",
-		"phpoffice/phpspreadsheet": "^1.23"
+		"php": ">=8.1",
+		"phpoffice/phpspreadsheet": "^1.23",
+		"typo3/cms-core": "^12.0"
 	},
 	"extra": {
 		"typo3/cms": {

@@ -5,7 +5,7 @@ namespace Ayacoo\Xliff\Service\Export;
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 class XlsxExportService implements AbstractExportServiceInterface
 {
@@ -51,16 +51,16 @@ class XlsxExportService implements AbstractExportServiceInterface
             $sheet = $spreadsheet->getActiveSheet();
 
             $row = 1;
-            $sheet->setCellValueByColumnAndRow(1, $row, 'Element ID');
-            $sheet->setCellValueByColumnAndRow(2, $row, 'Value');
+            $sheet->setCellValue([1, $row], 'Element ID');
+            $sheet->setCellValue([2, $row], 'Value');
 
             foreach ($transUnitItems ?? [] as $item) {
                 $row++;
                 $id = (string)$item->attributes()->id;
                 $value = (string)$item->source;
 
-                $sheet->setCellValueByColumnAndRow(1, $row, $id);
-                $sheet->setCellValueByColumnAndRow(2, $row, $value);
+                $sheet->setCellValue([1, $row], $id);
+                $sheet->setCellValue([2, $row], $value);
             }
 
             $exportFilename = str_replace('.xlf', '.xlsx', $absoluteFilePath);
@@ -78,12 +78,13 @@ class XlsxExportService implements AbstractExportServiceInterface
 
         $row = 1;
         $columnIndex = 1;
-        $sheet->setCellValueByColumnAndRow(1, $row, 'Element ID');
+        $sheet->setCellValue([1, $row], 'Element ID');
+
         foreach ($this->xliffItems as $localLangContent) {
             $languageKeys = array_keys($localLangContent);
             foreach ($languageKeys as $languageKey) {
                 $columnIndex++;
-                $sheet->setCellValueByColumnAndRow($columnIndex, $row, $languageKey);
+                $sheet->setCellValue([$columnIndex, $row], $languageKey);
             }
             break;
         }
@@ -91,15 +92,17 @@ class XlsxExportService implements AbstractExportServiceInterface
         foreach ($this->xliffItems as $id => $localLangContent) {
             $columnIndex = 1;
             $row++;
-            $sheet->setCellValueByColumnAndRow($columnIndex, $row, $id);
+            $sheet->setCellValue([$columnIndex, $row], $id);
             foreach ($localLangContent as $items) {
                 $columnIndex++;
-                $sheet->setCellValueByColumnAndRow($columnIndex, $row, $items);
+                $sheet->setCellValue([$columnIndex, $row], $items);
             }
         }
 
-        $exportPath = Environment::getExtensionsPath() . '/' . $this->extensionName . '/Resources/Private/Language/';
+        $extPath = ExtensionManagementUtility::extPath($this->extensionName);
+        $exportPath = $extPath . 'Resources/Private/Language/';
         $exportPath .= $this->extensionName . '.xlsx';
+
         $writer = new Xlsx($spreadsheet);
         $writer->save($exportPath);
     }

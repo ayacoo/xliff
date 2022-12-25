@@ -7,16 +7,10 @@ use Ayacoo\Xliff\Service\Export\AbstractExportServiceInterface;
 
 final class ModifyExportServiceEvent
 {
-    private ?AbstractExportServiceInterface $exportService;
-
-    /**
-     * @param AbstractExportServiceInterface|null $exportService
-     */
     public function __construct(
-        AbstractExportServiceInterface $exportService = null
+        private readonly ?AbstractExportServiceInterface $exportService = null
     )
     {
-        $this->exportService = $exportService;
     }
 
     /**

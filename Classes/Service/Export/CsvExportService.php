@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Ayacoo\Xliff\Service\Export;
 
-use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Utility\CsvUtility;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class CsvExportService implements AbstractExportServiceInterface
@@ -77,8 +77,10 @@ class CsvExportService implements AbstractExportServiceInterface
             $csvLines[] = CsvUtility::csvValues($dataRow, ',', '"');
         }
 
-        $exportPath = Environment::getExtensionsPath() . '/' . $this->extensionName . '/Resources/Private/Language/';
+        $extPath = ExtensionManagementUtility::extPath($this->extensionName);
+        $exportPath = $extPath . 'Resources/Private/Language/';
         $exportPath .= $this->extensionName . '.csv';
+
         GeneralUtility::writeFile($exportPath, implode(CRLF, $csvLines));
     }
 }

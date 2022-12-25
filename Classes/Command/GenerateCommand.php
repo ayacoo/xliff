@@ -11,13 +11,11 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Finder\Finder;
-use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class GenerateCommand extends Command
 {
-    private ?XliffService $xliffService;
-
     protected function configure(): void
     {
         $this->setDescription('Generate and translate xliff files for defined languages');
@@ -44,13 +42,11 @@ class GenerateCommand extends Command
         );
     }
 
-    /**
-     * @param XliffService $xliffService
-     */
-    public function __construct(XliffService $xliffService)
+    public function __construct(
+        private readonly ?XliffService $xliffService = null
+    )
     {
         parent::__construct();
-        $this->xliffService = $xliffService;
     }
 
     /**
@@ -68,7 +64,9 @@ class GenerateCommand extends Command
         $autoTranslate = (bool)$input->getOption('translate');
 
         $pattern = 'locallang*.xlf';
-        $path = Environment::getExtensionsPath() . '/' . $extensionName . '/Resources/Private/Language';
+        $extPath = ExtensionManagementUtility::extPath($extensionName);
+        $path = $extPath . 'Resources/Private/Language';
+
         $finder = new Finder();
         $finder->files()->in($path)->name($pattern);
 
@@ -121,7 +119,13 @@ class GenerateCommand extends Command
 
                             $id = (string)$item->attributes()->id;
                             $resName = (string)$item->attributes()->resname;
-                            $transUnitTag->addAttribute('resname', $resName ?: $id);
+                            $approved = (string)$item->attributes()->approved;
+                            if (empty($resName)) {
+                                $transUnitTag->addAttribute('resname', $id);
+                            }
+                            if (empty($approved)) {
+                                $transUnitTag->addAttribute('approved', 'no');
+                            }
 
                             $this->xliffService->addChild(
                                 $item,

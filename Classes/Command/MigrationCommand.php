@@ -11,13 +11,11 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Finder\Finder;
-use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class MigrationCommand extends Command
 {
-    private XliffService $xliffService;
-
     protected function configure(): void
     {
         $this->setDescription('Migrate xliff files for a extension');
@@ -58,13 +56,11 @@ class MigrationCommand extends Command
         );
     }
 
-    /**
-     * @param XliffService $xliffService
-     */
-    public function __construct(XliffService $xliffService)
+    public function __construct(
+        private readonly ?XliffService $xliffService = null
+    )
     {
         parent::__construct();
-        $this->xliffService = $xliffService;
     }
 
     /**
@@ -83,7 +79,9 @@ class MigrationCommand extends Command
         $path = $input->getOption('path') ?? '';
 
         $pattern = '*.xlf';
-        $searchFolder = Environment::getExtensionsPath() . '/' . $extensionName . '/Resources/Private/Language';
+        $extPath = ExtensionManagementUtility::extPath($extensionName);
+        $searchFolder = $extPath . 'Resources/Private/Language';
+
         if (!empty($file)) {
             $pattern = $file;
             $searchFolder .= '/' . $path;
@@ -121,7 +119,13 @@ class MigrationCommand extends Command
 
                     $id = (string)$item->attributes()->id;
                     $resName = (string)$item->attributes()->resname;
-                    $transUnitTag->addAttribute('resname', $resName ?: $id);
+                    $approved = (string)$item->attributes()->approved;
+                    if (empty($resName)) {
+                        $transUnitTag->addAttribute('resname', $id);
+                    }
+                    if (empty($approved)) {
+                        $transUnitTag->addAttribute('approved', 'no');
+                    }
 
                     $this->xliffService->addChild($item, $transUnitTag, $io);
                     $this->xliffService->addChild($item, $transUnitTag, $io, 'target');

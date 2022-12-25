@@ -4,8 +4,9 @@
 
 * Migrates XLIFF files from version 1.0 to 1.2
 * Generates XLIFF files in defined languages
-* Generates XLIFF files in defined languages with automatic translation via Deepl
-* Export XLIFF Files in csv or xlsx files
+* Generates XLIFF files in defined languages with automatic translation via Deepl/Google
+* Export XLIFF files in csv or xlsx files
+* Export XLIFF files in your custom export schema via event
 
 ## 2 Usage
 
@@ -110,3 +111,7 @@ And of course thanks deepl for their outstanding service
 [4]: https://www.agentur-brandung.de/
 
 [5]: https://cloud.google.com/translate/docs/reference/rest/
+
+## 6 Support
+
+If you are happy with the extension and would like to support it in any way, I would appreciate the support of social institutions.

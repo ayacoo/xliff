@@ -6,37 +6,31 @@ namespace Ayacoo\Xliff\Service\Translation;
 
 use GuzzleHttp\Exception\ClientException;
 use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Http\RequestFactory;
 
 class DeeplService implements AbstractTranslationInterface
 {
     private const CACHE_LIFETIME = 86400 * 30;
-    private ?RequestFactory $requestFactory;
     public array $apiSupportedLanguages = [];
     public array $formalitySupportedLanguages = [];
     private array $extConf;
-    private ?CacheManager $cacheManager;
 
-    /**
-     * @param RequestFactory $requestFactory
-     * @param ExtensionConfiguration $extensionConfiguration
-     * @param CacheManager $cacheManager
-     * @throws \TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationExtensionNotConfiguredException
-     * @throws \TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationPathDoesNotExistException
-     * @throws \JsonException
-     * @throws \TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException
-     */
     public function __construct(
-        RequestFactory         $requestFactory,
-        ExtensionConfiguration $extensionConfiguration,
-        CacheManager           $cacheManager
+        ExtensionConfiguration           $extensionConfiguration,
+        private readonly ?RequestFactory $requestFactory = null,
+        private readonly ?CacheManager   $cacheManager = null
     )
     {
-        $this->requestFactory = $requestFactory;
         $this->extConf = $extensionConfiguration->get('xliff') ?? [];
-        $this->cacheManager = $cacheManager;
-        $this->getSupportedLanguagesFromCache();
+        try {
+            $this->getSupportedLanguagesFromCache();
+        } catch (\JsonException $e) {
+
+        } catch (NoSuchCacheException $e) {
+
+        }
     }
 
     public function getApiSupportedLanguages(): array
@@ -93,7 +87,7 @@ class DeeplService implements AbstractTranslationInterface
         foreach ($postFields as $key => $value) {
             $postFieldString .= $key . '=' . $value . '&';
         }
-        rtrim($postFieldString, '&');
+        $postFieldString = rtrim($postFieldString, '&');
         $contentLength = mb_strlen($postFieldString, '8bit');
 
         try {
@@ -128,7 +122,7 @@ class DeeplService implements AbstractTranslationInterface
         foreach ($postFields as $key => $value) {
             $postFieldString .= $key . '=' . $value . '&';
         }
-        rtrim($postFieldString, '&');
+        $postFieldString = rtrim($postFieldString, '&');
         $contentLength = mb_strlen($postFieldString, '8bit');
 
         try {
@@ -153,13 +147,15 @@ class DeeplService implements AbstractTranslationInterface
             }
         } catch (ClientException $e) {
 
+        } catch (\JsonException $e) {
+
         }
     }
 
     /**
      * @return void
      * @throws \JsonException
-     * @throws \TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException
+     * @throws NoSuchCacheException
      */
     protected function getSupportedLanguagesFromCache(): void
     {
