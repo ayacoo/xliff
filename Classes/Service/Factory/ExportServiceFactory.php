@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Ayacoo\Xliff\Service\Factory;
 
 use Ayacoo\Xliff\Service\Export\CsvExportService;
+use Ayacoo\Xliff\Service\Export\JsonExportService;
 use Ayacoo\Xliff\Service\Export\XlsxExportService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -40,5 +41,10 @@ class ExportServiceFactory
     public function createXlsxExport(): XlsxExportService
     {
         return GeneralUtility::makeInstance(XlsxExportService::class, $this->getExtensionName(), $this->isSingleFileExport());
+    }
+
+    public function createJsonExport(): JsonExportService
+    {
+        return GeneralUtility::makeInstance(JsonExportService::class, $this->getExtensionName(), $this->isSingleFileExport());
     }
 }

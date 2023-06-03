@@ -75,6 +75,14 @@ class DeeplService implements AbstractTranslationInterface
     public function getTranslation(string $content, string $targetLanguage, string $sourceLanguage): array
     {
         $targetLanguage = strtoupper($targetLanguage);
+
+        // special language mapping
+        if ($targetLanguage === 'EN') {
+            $targetLanguage = 'EN-GB';
+        }
+        if ($targetLanguage === 'PT') {
+            $targetLanguage = 'PT-PT';
+        }
         if (!in_array($targetLanguage, $this->getApiSupportedLanguages(), true)) {
             return [];
         }
@@ -168,15 +176,26 @@ class DeeplService implements AbstractTranslationInterface
 
         $cache = $this->cacheManager->getCache('tx_xliff_cache');
         $supportedApiLanguagesCache = $cache->get($supportedApiLanguagesIdentifier);
-        $supportedFormalityLanguagesCache = $cache->get($supportedFormalityLanguagesIdentifier);
 
+
+        $supportedFormalityLanguagesCache = $cache->get($supportedFormalityLanguagesIdentifier);
         if (!$supportedApiLanguagesCache || !$supportedFormalityLanguagesCache) {
             $this->fetchDeeplLanguages();
             $cache->set($supportedApiLanguagesIdentifier, $this->apiSupportedLanguages, [], self::CACHE_LIFETIME);
             $cache->set($supportedFormalityLanguagesIdentifier, $this->formalitySupportedLanguages, [], self::CACHE_LIFETIME);
         }
 
-        $this->setApiSupportedLanguages($supportedApiLanguagesCache ?? $this->apiSupportedLanguages);
-        $this->setFormalitySupportedLanguages($supportedFormalityLanguagesCache ?? $this->formalitySupportedLanguages);
+        if (is_array($supportedApiLanguagesCache)) {
+            $this->setApiSupportedLanguages($supportedApiLanguagesCache);
+        } else {
+            $this->setApiSupportedLanguages($this->apiSupportedLanguages);
+        }
+
+        if (is_array($supportedFormalityLanguagesCache)) {
+            $this->setFormalitySupportedLanguages($supportedFormalityLanguagesCache);
+        } else {
+            $this->setFormalitySupportedLanguages($this->formalitySupportedLanguages);
+        }
+
     }
 }

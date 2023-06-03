@@ -20,7 +20,7 @@
 		"ext-simplexml": "*",
 		"ext-dom": "*",
 		"ext-libxml": "*",
-		"phpoffice/phpspreadsheet": "^1.23"
+		"phpoffice/phpspreadsheet": "^1.28"
 	},
 	"extra": {
 		"typo3/cms": {

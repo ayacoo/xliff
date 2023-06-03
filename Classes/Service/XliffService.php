@@ -18,10 +18,11 @@ class XliffService
     public function __construct(ExtensionConfiguration $extensionConfiguration)
     {
         $extConf = $extensionConfiguration->get('xliff') ?? [];
-        if ($extConf['translationService'] === 'deepl') {
+        $translationService = strtolower($extConf['translationService'] ?? '');
+        if ($translationService === 'deepl') {
             $this->translationService = GeneralUtility::makeInstance(DeeplService::class);
         }
-        if ($extConf['translationService'] === 'google') {
+        if ($translationService === 'google') {
             $this->translationService = GeneralUtility::makeInstance(GoogleService::class);
         }
     }

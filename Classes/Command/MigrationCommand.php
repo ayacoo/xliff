@@ -11,7 +11,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Finder\Finder;
-use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class MigrationCommand extends Command
@@ -83,7 +83,7 @@ class MigrationCommand extends Command
         $path = $input->getOption('path') ?? '';
 
         $pattern = '*.xlf';
-        $searchFolder = Environment::getExtensionsPath() . '/' . $extensionName . '/Resources/Private/Language';
+        $searchFolder = ExtensionManagementUtility::extPath($extensionName) . 'Resources/Private/Language';
         if (!empty($file)) {
             $pattern = $file;
             $searchFolder .= '/' . $path;

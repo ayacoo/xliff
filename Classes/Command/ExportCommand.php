@@ -15,7 +15,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Finder\Finder;
-use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 class ExportCommand extends Command
 {
@@ -93,10 +93,10 @@ class ExportCommand extends Command
         $extensionName = $input->getOption('extension');
         $file = $input->getOption('file');
         $path = $input->getOption('path') ?? '';
-        $format = $input->getOption('format');
+        $format = strtolower($input->getOption('format'));
         $singleFileExport = (bool)$input->getOption('singleFileExport');
 
-        $searchFolder = Environment::getExtensionsPath() . '/' . $extensionName . '/Resources/Private/Language';
+        $searchFolder = ExtensionManagementUtility::extPath($extensionName) . 'Resources/Private/Language';
 
         $pattern = '*.xlf';
         if (!empty($file)) {
@@ -166,6 +166,9 @@ class ExportCommand extends Command
         switch ($format) {
             case 'xlsx':
                 $exportService = $this->exportServiceFactory->createXlsxExport();
+                break;
+            case 'json':
+                $exportService = $this->exportServiceFactory->createJsonExport();
                 break;
             default:
                 $exportService = $this->exportServiceFactory->createCsvExport();

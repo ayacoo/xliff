@@ -3,12 +3,10 @@ declare(strict_types=1);
 
 namespace Ayacoo\Xliff\Service\Export;
 
-use TYPO3\CMS\Core\Core\Environment;
-use TYPO3\CMS\Core\Utility\CsvUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-class CsvExportService implements AbstractExportServiceInterface
+class JsonExportService implements AbstractExportServiceInterface
 {
     protected array $xliffItems = [];
 
@@ -45,41 +43,44 @@ class CsvExportService implements AbstractExportServiceInterface
 
     protected function buildMultiFileExport(): void
     {
-        $csvLines = [];
-        $dataRow['id'] = 'Element ID';
-        $dataRow['value'] = 'Value';
-        $csvLines[] = CsvUtility::csvValues($dataRow, ',', '"');
-
         foreach ($this->xliffItems as $absoluteFilePath => $transUnitItems) {
+            $i = 0;
+            $dataRow[$i]['id'] = 'Element ID';
+            $dataRow[$i]['value'] = 'Value';
             foreach ($transUnitItems ?? [] as $item) {
-                $dataRow['id'] = (string)$item->attributes()->id;
-                $dataRow['value'] = (string)$item->source;
-                $csvLines[] = CsvUtility::csvValues($dataRow, ',', '"');
+                $i++;
+                $dataRow[$i]['id'] = (string)$item->attributes()->id;
+                $dataRow[$i]['value'] = (string)$item->source;
             }
+            $jsonContent = json_encode($dataRow);
 
-            $exportFilename = str_replace('.xlf', '.csv', $absoluteFilePath);
-            GeneralUtility::writeFile($exportFilename, implode(CRLF, $csvLines));
+            $exportFilename = str_replace('.xlf', '.json', $absoluteFilePath);
+            GeneralUtility::writeFile($exportFilename, $jsonContent);
         }
     }
 
     protected function buildSingleFileExport(): void
     {
-        $csvLines = [];
-        $dataRow['id'] = 'Element ID';
+        $i = 0;
+        $dataRow[$i]['id'] = 'Element ID';
         foreach ($this->xliffItems as $localLangContent) {
             foreach ($localLangContent as $languageKey => $items) {
-                $dataRow[$languageKey] = strtoupper($languageKey);
+                $dataRow[$i][$languageKey] = strtoupper($languageKey);
             }
         }
-        $csvLines[] = CsvUtility::csvValues($dataRow, ',', '"');
 
         foreach ($this->xliffItems as $id => $localLangContent) {
-            $dataRow = array_merge([$id], $localLangContent);
-            $csvLines[] = CsvUtility::csvValues($dataRow, ',', '"');
+            $i++;
+            $dataRow[$i]['id'] = $id;
+            foreach ($localLangContent as $languageKey => $item) {
+                $dataRow[$i][$languageKey] = $item;
+            }
         }
 
+        $jsonContent = json_encode($dataRow);
+
         $exportPath = ExtensionManagementUtility::extPath($this->extensionName) . 'Resources/Private/Language/';
-        $exportPath .= $this->extensionName . '.csv';
-        GeneralUtility::writeFile($exportPath, implode(CRLF, $csvLines));
+        $exportPath .= $this->extensionName . '.json';
+        GeneralUtility::writeFile($exportPath, $jsonContent);
     }
 }
